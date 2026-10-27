@@ -2,9 +2,9 @@ name: Pipeline de Seguranca LFD121
 
 on:
     push:
-        branches: [main]
+        branches: [main, master]
     pull_request:
-        branches: [main]
+        branches: [main, master]
 
 jobs:
     analise-seguranca:
@@ -26,5 +26,18 @@ jobs:
 
             - name: Executar pip-audit (SCA)
               run: |
-                  pip intall pip-audit
+                  pip install pip-audit
                   pip-audit -r requirements.txt
+            
+            - name: Construir Imagem Docker
+              run: |
+                  docker build -t lab-seguranca:latest .
+            
+            - name: Executar Container Scanning (trivy)
+              uses: aquasecurity/trivy-action@master
+              with:
+                    image-ref: 'lab-seguranca:latest'
+                    format: 'table'
+                    exit-code: '1'
+                    vuln-type: 'os,library'
+                    severity: 'CRITICAL,HIGH'
