@@ -26,5 +26,5 @@ jobs:
 
             - name: Executar pip-audit (SCA)
               run: |
-                  pip intall pip-audit
+                  pip install pip-audit
                   pip-audit -r requirements.txt
