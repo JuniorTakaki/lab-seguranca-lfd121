@@ -3,8 +3,10 @@ import sqlite3
 import bcrypt
 
 # 1. Credencial hardcoded (Erro clássico que ferramentas de segredo pegam)
-# API_KEY = "sk-live-123456789abcdefsecretkey"
-# ADMIN_PASSWORD = "senha_super_secreta_123"
+
+# semgrep scan --config auto
+#pip-audit -r requirements.txt
+#semgrep scan --config auto --metrics=off
 
 API_KEY =  os.getenv( "API_KEY", "chave-segura")
 
