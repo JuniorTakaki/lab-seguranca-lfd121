@@ -1,0 +1,43 @@
+name: Pipeline de Seguranca LFD121
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    analise-seguranca:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout do Código
+              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+
+            - name: Configurar Python
+              uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+              with:
+                  python-version: "3.11"
+
+            - name: Executar Semgrep (SAST)
+              uses: semgrep/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
+              with:
+                  config: auto
+
+            - name: Executar pip-audit (SCA)
+              run: |
+                  pip install pip-audit
+                  pip-audit -r requirements.txt
+
+            - name: Construir Imagem Docker
+              run: |
+                  docker build -t lab-seguranca:latest .
+
+            - name: Executar Container Scanning (trivy)
+              uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+              with:
+                  image-ref: "lab-seguranca:latest"
+                  format: "table"
+                  exit-code: "0"
+                  vuln-type: "os,library"
+                  severity: "CRITICAL,HIGH"
