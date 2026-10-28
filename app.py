@@ -8,7 +8,6 @@ import bcrypt
 #pip-audit -r requirements.txt
 #semgrep scan --config auto --metrics=off
 
-<<<<<<< HEAD
 def validar_nome_usuario(nome):
     if not nome or not isinstance(nome, str):
         raise ValueError("O campo nome deve ser preenchido")
@@ -25,18 +24,7 @@ def cadastrar_usuario( nome, senha_pura):
 
     conn = sqlite3.connect('usuarios.db')
     cursor = conn.cursor()
-=======
-API_KEY =  os.getenv( "API_KEY", "chave-segura")
 
-def cadastrar_usuario( nome, senh_pura):
-    # 1. Gera um "salt" aleatório e faz o hash seguro da senha
-    salt = bcrypt.gensalt()
-    senha_hash = bcrypt.hashpw(senh_pura.encode('utf-8'), salt)
-
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-
->>>>>>> acc246797c583c57238afff113e9c4dd87127124
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +38,6 @@ def cadastrar_usuario( nome, senh_pura):
     conn.close()
     print(f"Usuário {nome} cadastrado.")
 
-<<<<<<< HEAD
 def autenticar_usuario(nome, senha_fornecida):
     validar_nome_usuario(nome) #valido também nessa função a autenticação.
 
@@ -106,30 +93,3 @@ if __name__ == "__main__":
     cadastrar_usuario("admin", senha_inicial)
     autenticar_usuario("admin", senha_inicial)
 
-=======
-if __name__ == "__main__":
-    print("Iniciando aplicação segura...")
-    senha_inicial = os.getenv("Senha_ADMIN_INICIAL", "senha_padrao_temporaria")
-    cadastrar_usuario("admin", senha_inicial)
-
-
-def conectar_banco(nome_usuario):
-    conexao = sqlite3.connect('usuarios.db')
-    cursor = conexao.cursor()
-    
-    # 2. Vulnerabilidade de SQL Injection (Foco de Input Validation do LFD121)
-    # query = f"SELECT * FROM usuarios WHERE nome = '{nome_usuario}'"
-    query = "SELECT * FROM usuarios WHERE nome = ?"
-    print(f"Executando query segura com parâmetro")
-    # print(f"Executando query: {query}")
-    
-    # cursor.execute(query)
-    # return cursor.fetchall()
-    cursor.execute(query, (nome_usuario,))
-    return cursor.fetchall()
-
-
-if __name__ == "__main__":
-    print("Iniciando aplicação de teste...")
-    conectar_banco("admin")
->>>>>>> acc246797c583c57238afff113e9c4dd87127124
