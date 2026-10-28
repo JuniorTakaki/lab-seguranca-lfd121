@@ -6,10 +6,10 @@ objetivo é demonstrar controles básicos de desenvolvimento seguro em uma
 aplicação Python que utiliza SQLite, hash de senhas e consultas parametrizadas,
 além de verificações automatizadas no pipeline de CI.
 
-> **Estado atual:** o arquivo `app.py` ainda contém conflitos de merge não
-> resolvidos. Por isso, o programa não pode ser executado até que esses
-> conflitos sejam corrigidos. A documentação abaixo descreve a estrutura e a
-> configuração atualmente presentes no repositório.
+> **Estado atual:** os conflitos de merge do `app.py` foram removidos e o
+> projeto está em processo de aprimoramento. Ainda existem vulnerabilidades e
+> inconsistências funcionais documentadas neste arquivo; portanto, a aplicação
+> continua destinada exclusivamente ao laboratório.
 
 ## Estrutura do projeto
 
@@ -41,12 +41,11 @@ O arquivo contém exemplos de:
 - uso de consultas SQL parametrizadas para evitar SQL Injection;
 - autenticação com `bcrypt.checkpw`.
 
-No estado atual, porém, o arquivo possui marcadores de conflito de merge
-(`<<<<<<<`, `=======` e `>>>>>>>`) e duas versões parcialmente sobrepostas da
-implementação. Também há inconsistências entre as duas versões, como nomes de
-variáveis de senha e da tabela consultada. Esses problemas precisam ser
-resolvidos antes da execução ou da utilização do código como aplicação
-funcional.
+Os conflitos de merge foram removidos e o arquivo agora possui uma única
+implementação de cada função e um único bloco de entrada. Ainda há problemas
+que precisam ser corrigidos, como a consulta de autenticação que referencia
+`usuários` enquanto a tabela criada se chama `usuarios`, além do uso de um
+valor padrão para `API_KEY`.
 
 ### `requirements.txt`
 
@@ -72,10 +71,6 @@ O container:
 4. instala as dependências sem manter o cache do `pip`;
 5. copia os arquivos para a imagem com `appuser` como proprietário;
 6. executa `python app.py`.
-
-O Dockerfile utiliza Python 3.12, enquanto o workflow do GitHub Actions está
-configurado atualmente para Python 3.11. Essa diferença deve ser considerada
-ao reproduzir o ambiente local ou ao alinhar as versões suportadas.
 
 ## Práticas do LFD121 aplicadas no laboratório
 
@@ -109,9 +104,9 @@ código com base nas práticas estudadas no LFD121.
 
 Entre os pontos atualmente conhecidos estão:
 
-- conflitos de merge no `app.py`, que impedem a execução correta da aplicação;
-- inconsistências entre as implementações de autenticação, nomes de variáveis e
-  nomes de tabelas;
+- inconsistência no nome da tabela usada pela autenticação (`usuários` versus
+  `usuarios`);
+- valor padrão de `API_KEY`, que não deve ser utilizado para segredos reais;
 - ausência de uma restrição de unicidade para impedir usuários duplicados;
 - conexões SQLite que ainda podem ser tratadas com mais robustez;
 - dependências declaradas com versões mínimas, em vez de um conjunto
@@ -196,8 +191,9 @@ reais devem ser fornecidos por um gerenciador de segredos ou pela
 infraestrutura de execução, e nunca devem ser gravados no código-fonte,
 versionados ou exibidos em logs.
 
-Como o `app.py` ainda contém conflitos de merge, o comportamento efetivo dessas
-variáveis depende da versão do trecho que for mantida durante a resolução.
+Embora os conflitos de merge tenham sido removidos, `API_KEY` ainda possui um
+valor padrão no código. Esse comportamento é inadequado para produção e deve
+ser substituído por uma configuração obrigatória, sem segredo embutido.
 
 ### Verificação automatizada
 
@@ -221,7 +217,7 @@ O workflow
 pull requests direcionados à branch `main`. Atualmente, ele:
 
 1. faz checkout do código usando uma action fixada em commit;
-2. configura o Python 3.11;
+2. configura o Python 3.12;
 3. executa o Semgrep com a configuração automática;
 4. instala e executa o `pip-audit` sobre `requirements.txt`;
 5. constrói a imagem `lab-seguranca:latest`;
@@ -250,8 +246,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Antes de executar o programa, defina as variáveis esperadas pela versão do
-código que será mantida:
+Antes de executar o programa, defina as variáveis esperadas:
 
 ```powershell
 $env:API_KEY = "chave-apenas-para-o-laboratorio"
@@ -259,10 +254,9 @@ $env:Senha_ADMIN_INICIAL = "troque-esta-senha"
 python app.py
 ```
 
-No estado atual, a execução falhará por causa dos conflitos de merge em
-`app.py`. Depois de resolvê-los, o programa poderá criar o arquivo local
-`usuarios.db`. Esse arquivo é gerado em tempo de execução e não deve ser
-versionado.
+O programa poderá criar o arquivo local `usuarios.db`. Esse arquivo é gerado
+em tempo de execução e não deve ser versionado. A autenticação ainda não
+funcionará corretamente até que o nome da tabela na consulta seja corrigido.
 
 Para recriar o banco do laboratório, remova somente o arquivo gerado:
 
@@ -293,11 +287,9 @@ dessas verificações.
 
 Antes de considerar o laboratório funcional, é necessário:
 
-- resolver os conflitos de merge em `app.py`;
-- manter uma única implementação de cada função e um único bloco de entrada;
-- alinhar `Python 3.11` do workflow com `Python 3.12` do container, ou
-  documentar formalmente a diferença;
-- corrigir os nomes inconsistentes da tabela e das variáveis de senha;
+- corrigir o nome da tabela na consulta de autenticação;
+- manter a validação das variáveis obrigatórias sem valores padrão para
+  segredos;
 - garantir que as variáveis obrigatórias não tenham segredos padrão;
 - fechar conexões SQLite com mais robustez, preferencialmente com context
   managers;
@@ -311,4 +303,6 @@ Antes de considerar o laboratório funcional, é necessário:
 
 O propósito do repositório é acompanhar o ciclo de reconhecer um padrão
 inseguro, aplicar uma correção verificável e automatizar a detecção no
-pipeline.
+pipeline. A remoção dos conflitos de merge e o alinhamento do pipeline com
+Python 3.12 são avanços recentes; a correção das vulnerabilidades restantes
+continua fazendo parte do exercício prático do LFD121.
