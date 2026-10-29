@@ -49,17 +49,9 @@ valor padrão para `API_KEY`.
 
 ### `requirements.txt`
 
-As dependências declaradas atualmente são:
-
-- `bcrypt==4.2.1`;
-- `flask>=2.3.2`;
-- `idna>=3.15`;
-- `requests>=2.33.0`;
-- `urllib3>=2.8.0`.
-
-O código presente em `app.py` utiliza diretamente `bcrypt`. As demais
-dependências permanecem declaradas para as verificações de dependências e para
-eventuais extensões do laboratório.
+A única dependência de execução declarada atualmente é `bcrypt==4.2.1`, que o
+código utiliza diretamente para o hash das senhas. Dependências não utilizadas
+foram removidas para reduzir a superfície de ataque e o custo de manutenção.
 
 ### `dockerfile`
 
@@ -78,16 +70,16 @@ O laboratório coloca em prática uma abordagem de desenvolvimento seguro
 orientada à prevenção: identificar o risco no código, aplicar um controle
 específico e verificar automaticamente se o problema continua presente.
 
-| Prática estudada | Aplicação neste projeto | Evidência |
-|---|---|---|
-| Não armazenar segredos no código | `API_KEY` e `Senha_ADMIN_INICIAL` são obtidas por variáveis de ambiente | `os.getenv()` em `app.py` |
-| Proteger credenciais | A senha não é salva em texto puro; é gerado um salt e armazenado um hash | `bcrypt.gensalt()` e `bcrypt.hashpw()` |
-| Validar entradas | O nome de usuário é validado quanto ao tipo, tamanho e caracteres permitidos | `validar_nome_usuario()` |
-| Evitar injeção de SQL | O nome do usuário é enviado como parâmetro, separado da instrução SQL | `cursor.execute(query, (nome_usuario,))` |
-| Automatizar a análise de segurança | O código e as dependências são analisados no CI | Semgrep e pip-audit |
-| Reduzir riscos da imagem | A imagem usa uma variante slim e executa como usuário não-root | `dockerfile` |
-| Verificar dependências e imagem | Dependências Python e bibliotecas do container são examinadas | pip-audit e Trivy |
-| Aplicar shift left | As verificações acontecem em pushes e pull requests antes do deploy | `.github/workflows/seguranca.yml` |
+| Prática estudada                   | Aplicação neste projeto                                                      | Evidência                                |
+| ---------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| Não armazenar segredos no código   | `API_KEY` e `Senha_ADMIN_INICIAL` são obtidas por variáveis de ambiente      | `os.getenv()` em `app.py`                |
+| Proteger credenciais               | A senha não é salva em texto puro; é gerado um salt e armazenado um hash     | `bcrypt.gensalt()` e `bcrypt.hashpw()`   |
+| Validar entradas                   | O nome de usuário é validado quanto ao tipo, tamanho e caracteres permitidos | `validar_nome_usuario()`                 |
+| Evitar injeção de SQL              | O nome do usuário é enviado como parâmetro, separado da instrução SQL        | `cursor.execute(query, (nome_usuario,))` |
+| Automatizar a análise de segurança | O código e as dependências são analisados no CI                              | Semgrep e pip-audit                      |
+| Reduzir riscos da imagem           | A imagem usa uma variante slim e executa como usuário não-root               | `dockerfile`                             |
+| Verificar dependências e imagem    | Dependências Python e bibliotecas do container são examinadas                | pip-audit e Trivy                        |
+| Aplicar shift left                 | As verificações acontecem em pushes e pull requests antes do deploy          | `.github/workflows/seguranca.yml`        |
 
 Essas práticas representam os controles exercitados neste repositório. O
 laboratório não substitui requisitos de uma aplicação de produção, como
@@ -109,11 +101,9 @@ Entre os pontos atualmente conhecidos estão:
 - valor padrão de `API_KEY`, que não deve ser utilizado para segredos reais;
 - ausência de uma restrição de unicidade para impedir usuários duplicados;
 - conexões SQLite que ainda podem ser tratadas com mais robustez;
-- dependências declaradas com versões mínimas, em vez de um conjunto
-  completamente fixado e revisado;
-- pipeline do Trivy configurado para reportar vulnerabilidades sem falhar o
-  job (`exit-code: "0"`);
-- ausência de testes automatizados e de um `.dockerignore`;
+- dependência de execução ainda precisa passar por revisão periódica de
+  vulnerabilidades;
+- política de exceções do Trivy ainda precisa ser definida para cada ambiente;
 - controles ainda incompletos para autenticação, autorização, política de
   senhas, rotação de segredos e proteção de dados.
 
@@ -168,139 +158,6 @@ query = "SELECT * FROM usuarios WHERE nome = ?"
 cursor.execute(query, (nome_usuario,))
 ```
 
-A versão vulnerável por concatenação de strings permanece comentada no código
-para fins didáticos:
-
-```python
-query = f"SELECT * FROM usuarios WHERE nome = '{nome_usuario}'"
-```
-
-Essa versão não deve ser habilitada em uma aplicação real.
-
-### Validação de entrada
-
-A validação de `nome_usuario` restringe o valor a uma string alfanumérica com
-comprimento entre 3 e 40 caracteres. Essa validação reduz entradas inválidas,
-mas não substitui a parametrização da consulta: são controles diferentes e
-ambos são necessários.
-
-### Configuração por ambiente
-
-O código lê `API_KEY` e `Senha_ADMIN_INICIAL` usando `os.getenv()`. Segredos
-reais devem ser fornecidos por um gerenciador de segredos ou pela
-infraestrutura de execução, e nunca devem ser gravados no código-fonte,
-versionados ou exibidos em logs.
-
-Embora os conflitos de merge tenham sido removidos, `API_KEY` ainda possui um
-valor padrão no código. Esse comportamento é inadequado para produção e deve
-ser substituído por uma configuração obrigatória, sem segredo embutido.
-
-### Verificação automatizada
-
-As ferramentas têm objetivos complementares:
-
-- **Semgrep (SAST):** procura padrões perigosos no código-fonte, como uso
-  inseguro de APIs e possíveis segredos expostos;
-- **pip-audit (SCA):** compara as dependências Python declaradas com
-  vulnerabilidades conhecidas;
-- **Trivy:** verifica vulnerabilidades do sistema operacional e das bibliotecas
-  presentes na imagem Docker.
-
-Uma análise automatizada ajuda a detectar problemas cedo, mas não garante que
-o software esteja seguro. Os resultados precisam ser revisados por uma pessoa
-e complementados por testes e análise de requisitos.
-
-## Pipeline de segurança
-
-O workflow
-[`seguranca.yml`](./.github/workflows/seguranca.yml) é executado em pushes e
-pull requests direcionados à branch `main`. Atualmente, ele:
-
-1. faz checkout do código usando uma action fixada em commit;
-2. configura o Python 3.12;
-3. executa o Semgrep com a configuração automática;
-4. instala e executa o `pip-audit` sobre `requirements.txt`;
-5. constrói a imagem `lab-seguranca:latest`;
-6. executa o Trivy para vulnerabilidades `HIGH` e `CRITICAL` do sistema e das
-   bibliotecas.
-
-O passo do Trivy está configurado com `exit-code: "0"`. Assim, o resultado da
-análise é exibido, mas a presença de vulnerabilidades não faz o job falhar.
-Essa configuração pode ser alterada quando a política do projeto exigir que
-vulnerabilidades bloqueiem o pipeline.
-
-## Como preparar o ambiente local
-
-### Pré-requisitos
-
-- Python 3.12, para corresponder ao container;
-- `pip`;
-- PowerShell no Windows;
-- opcionalmente, Docker, Semgrep, pip-audit e Trivy.
-
-A partir da raiz do repositório:
-Este projeto é um laboratório prático inspirado nos conceitos do curso
-**LFD121 — Developing Secure Software**, da Linux Foundation. A proposta é
-demonstrar, em uma aplicação Python pequena, como identificar e aplicar
-controles básicos de desenvolvimento seguro desde o código até o pipeline de
-integração contínua.
-
-O projeto não é uma aplicação web completa. Ele funciona como um exemplo
-executável para estudar armazenamento seguro de senhas, proteção contra SQL
-Injection, gerenciamento de configuração por variáveis de ambiente e
-verificações automatizadas de segurança.
-
-## O que a aplicação faz
-
-O arquivo [`app.py`](./app.py):
-
-1. Lê uma chave de API a partir da variável de ambiente `API_KEY`.
-2. Obtém uma senha inicial pela variável `Senha_ADMIN_INICIAL`.
-3. Cria, se necessário, o banco SQLite `usuarios.db`.
-4. Cria a tabela `usuarios` com `id`, `nome` e `senha_hash`.
-5. Cadastra um usuário `admin`.
-6. Gera um salt aleatório e armazena a senha usando o algoritmo de hash
-   `bcrypt`, em vez de guardar a senha em texto puro.
-7. Consulta um usuário usando uma query parametrizada, evitando concatenar
-   diretamente a entrada na instrução SQL.
-
-Ao executar o programa, são realizados dois fluxos de demonstração: o cadastro
-do administrador e uma consulta pelo nome `admin`. O banco é criado no
-diretório de execução e o arquivo `usuarios.db` não faz parte do código-fonte.
-
-## Conceitos do LFD121 aplicados
-
-### Proteção de credenciais
-
-As credenciais não precisam ser escritas diretamente no código: a aplicação
-usa `os.getenv()` para permitir a configuração por ambiente. Em um ambiente
-real, essas variáveis devem ser fornecidas por um gerenciador de segredos ou
-pela infraestrutura de execução, e nunca publicadas em logs ou no repositório.
-
-### Armazenamento seguro de senhas
-
-A função `cadastrar_usuario()` usa `bcrypt.gensalt()` e
-`bcrypt.hashpw()`. Assim, o banco guarda o hash com salt, não a senha original.
-O hash é específico para senhas e deve ser usado em conjunto com uma rotina de
-verificação durante a autenticação.
-
-### Validação e parametrização de entrada
-
-O exemplo mantém, comentada, uma versão vulnerável à SQL Injection para fins
-didáticos:
-
-```python
-query = f"SELECT * FROM usuarios WHERE nome = '{nome_usuario}'"
-```
-
-A implementação utilizada substitui essa concatenação por uma query
-parametrizada:
-
-```python
-query = "SELECT * FROM usuarios WHERE nome = ?"
-cursor.execute(query, (nome_usuario,))
-```
-
 Essa separação entre código SQL e dados impede que o valor recebido seja
 interpretado como parte da instrução SQL.
 
@@ -334,9 +191,9 @@ pushes e pull requests direcionados à branch `main`. Ele:
 6. Executa o Trivy para vulnerabilidades `CRITICAL` e `HIGH` de sistema e
    bibliotecas.
 
-Esse fluxo representa uma abordagem de *shift left*: os problemas de segurança
-podem ser encontrados durante a alteração do código, antes da publicação ou
-do deploy.
+O passo do Trivy usa `exit-code: "1"` para que vulnerabilidades `HIGH` ou
+`CRITICAL` façam o job falhar. Exceções devem ser documentadas e aprovadas
+explicitamente, em vez de ignoradas silenciosamente.
 
 ## Como executar localmente
 
@@ -459,21 +316,15 @@ sequência automatizada dessas etapas.
 
 ## Limitações e próximos passos
 
-Este é um laboratório educacional, não uma aplicação pronta para produção.
-Entre os pontos que poderiam ser evoluídos estão:
+Antes de considerar o laboratório funcional, é necessário:
 
-- não usar valores padrão para segredos em ambientes de produção;
-- validar formato, tamanho e conteúdo dos dados de entrada;
-- fechar conexões de banco com mais robustez, por exemplo usando context
-  managers;
-- implementar autenticação e verificação de senha;
-- impedir duplicidade de usuários com uma restrição `UNIQUE`;
-- adicionar testes automatizados;
-- fixar e revisar todas as versões das dependências;
-- configurar o Trivy para falhar o pipeline quando vulnerabilidades críticas ou
-  altas forem encontradas, conforme a política do projeto;
-- adicionar um `.dockerignore` para não copiar ambientes virtuais e arquivos
-  locais para a imagem.
+- corrigir o nome da tabela na consulta de autenticação;
+- manter a validação das variáveis obrigatórias sem valores padrão para
+  segredos;
+- garantir que as variáveis obrigatórias não tenham segredos padrão;
+- revisar periodicamente a dependência fixada e os resultados do `pip-audit`;
+- definir um processo formal para aprovar exceções do Trivy;
+- evoluir os testes para cobrir autorização, sessões e limites de tentativa.
 
 O valor principal deste repositório é mostrar o ciclo: reconhecer um padrão
 inseguro, aplicar uma correção simples e verificável e automatizar a detecção
