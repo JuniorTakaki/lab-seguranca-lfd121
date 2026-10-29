@@ -26,8 +26,12 @@ jobs:
 
             - name: Executar pip-audit (SCA)
               run: |
-                  pip install pip-audit
+                  python -m pip install pip-audit
                   pip-audit -r requirements.txt
+
+            - name: Executar testes
+              run: |
+                  python -m unittest discover -s tests -v
 
             - name: Construir Imagem Docker
               run: |
@@ -38,6 +42,6 @@ jobs:
               with:
                   image-ref: "lab-seguranca:latest"
                   format: "table"
-                  exit-code: "0"
+                  exit-code: "1"
                   vuln-type: "os,library"
                   severity: "CRITICAL,HIGH"

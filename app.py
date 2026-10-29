@@ -1,14 +1,8 @@
 import os
 import sqlite3
+from contextlib import closing
 import bcrypt
 
-# 1. Credencial hardcoded (Erro clássico que ferramentas de segredo pegam)
-
-# semgrep scan --config auto
-#pip-audit -r requirements.txt
-#semgrep scan --config auto --metrics=off
-
-<<<<<<< HEAD
 def validar_nome_usuario(nome):
     if not nome or not isinstance(nome, str):
         raise ValueError("O campo nome deve ser preenchido")
@@ -16,51 +10,54 @@ def validar_nome_usuario(nome):
         raise ValueError("Nome de usuário inválido! Deve conter apenas caracteres alfanuméricos.")
     return True
 
+def validar_senha(senha):
+    if not isinstance(senha, str):
+        raise ValueError("A senha deve ser um texto")
+    if len(senha) < 9:
+        raise ValueError("A senha deve ter pelo menos 9 caracteres")
+    if len(senha.encode("utf-8")) > 72:
+        raise ValueError("A senha não pode exceder 72 bytes")
+    if not any(caractere.isupper() for caractere in senha):
+        raise ValueError("A senha deve conter letra maiúscula")
+    if not any(caractere.islower() for caractere in senha):
+        raise ValueError("A senha deve conter letra minúscula")
+    if not any(caractere.isdigit() for caractere in senha):
+        raise ValueError("A senha deve conter número")
+    return True
+
 def cadastrar_usuario( nome, senha_pura):
     validar_nome_usuario(nome) # valido o nome com base na função acima 
-
+    validar_senha(senha_pura)
     # 1. Gera um "salt" aleatório e faz o hash seguro da senha
     salt = bcrypt.gensalt()
     senha_hash = bcrypt.hashpw(senha_pura.encode('utf-8'), salt)
 
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-=======
-API_KEY =  os.getenv( "API_KEY", "chave-segura")
 
-def cadastrar_usuario( nome, senh_pura):
-    # 1. Gera um "salt" aleatório e faz o hash seguro da senha
-    salt = bcrypt.gensalt()
-    senha_hash = bcrypt.hashpw(senh_pura.encode('utf-8'), salt)
-
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-
->>>>>>> acc246797c583c57238afff113e9c4dd87127124
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT,
-        senha_hash BLOB
-        )
-    ''')
-
-    cursor.execute("INSERT INTO usuarios (nome, senha_hash) VALUES (?, ?)", (nome , senha_hash))
-    conn.commit()
-    conn.close()
+    with closing(sqlite3.connect(os.getenv("DATABASE_PATH", "usuarios.db"))) as conn:
+        with conn:
+            conn.execute('''
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT UNIQUE NOT NULL,
+                senha_hash BLOB NOT NULL
+                )
+            ''')
+            try:
+                conn.execute(
+                    "INSERT INTO usuarios (nome, senha_hash) VALUES (?, ?)",
+                    (nome, senha_hash),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise ValueError(f"O usuário '{nome}' já está cadastrado") from exc
     print(f"Usuário {nome} cadastrado.")
 
-<<<<<<< HEAD
 def autenticar_usuario(nome, senha_fornecida):
     validar_nome_usuario(nome) #valido também nessa função a autenticação.
 
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-
-    # Buscar o hash da senha armazenado do user especifico.
-    cursor.execute("SELECT senha_hash FROM usuários WHERE nome = ?", (nome,))
-    resultado = cursor.fetchone()
-    conn.close()
+    with closing(sqlite3.connect(os.getenv("DATABASE_PATH", "usuarios.db"))) as conn:
+        resultado = conn.execute(
+            "SELECT senha_hash FROM usuarios WHERE nome = ?", (nome,)
+        ).fetchone()
 
     if not resultado:
         print(f"Falha de autenticação: Usuário '{nome}' não encontrado.")
@@ -78,24 +75,15 @@ def autenticar_usuario(nome, senha_fornecida):
     
 def conectar_banco(nome_usuario):
     validar_nome_usuario(nome_usuario)
-    conn = sqlite3.connect('usuarios.db')
-    cursor = conn.cursor()
-    query = "SELECT * FROM usuarios WHERE nome = ?"
-    cursor.execute(query, (nome_usuario,))
-    resultado =  cursor.fetchall()
-    conn.close()
-    return resultado
+    with closing(sqlite3.connect(os.getenv("DATABASE_PATH", "usuarios.db"))) as conn:
+        return conn.execute(
+            "SELECT * FROM usuarios WHERE nome = ?", (nome_usuario,)
+        ).fetchall()
 
-    # 2. Vulnerabilidade de SQL Injection (Foco de Input Validation do LFD121)
-    # query = f"SELECT * FROM usuarios WHERE nome = '{nome_usuario}'"
-    # print(f"Executando query: {query}")
-    # cursor.execute(query)
-    # return cursor.fetchall()
-    
 if __name__ == "__main__":
     print("Iniciando aplicação segura...")
 
-    API_KEY =  os.getenv( "API_KEY", "chave-segura")
+    API_KEY =  os.getenv("API_KEY")
     if not API_KEY:
         raise EnvironmentError("ERRO Crítico: A variável de ambiente API_KEY não está definida!")
 
@@ -105,31 +93,3 @@ if __name__ == "__main__":
 
     cadastrar_usuario("admin", senha_inicial)
     autenticar_usuario("admin", senha_inicial)
-
-=======
-if __name__ == "__main__":
-    print("Iniciando aplicação segura...")
-    senha_inicial = os.getenv("Senha_ADMIN_INICIAL", "senha_padrao_temporaria")
-    cadastrar_usuario("admin", senha_inicial)
-
-
-def conectar_banco(nome_usuario):
-    conexao = sqlite3.connect('usuarios.db')
-    cursor = conexao.cursor()
-    
-    # 2. Vulnerabilidade de SQL Injection (Foco de Input Validation do LFD121)
-    # query = f"SELECT * FROM usuarios WHERE nome = '{nome_usuario}'"
-    query = "SELECT * FROM usuarios WHERE nome = ?"
-    print(f"Executando query segura com parâmetro")
-    # print(f"Executando query: {query}")
-    
-    # cursor.execute(query)
-    # return cursor.fetchall()
-    cursor.execute(query, (nome_usuario,))
-    return cursor.fetchall()
-
-
-if __name__ == "__main__":
-    print("Iniciando aplicação de teste...")
-    conectar_banco("admin")
->>>>>>> acc246797c583c57238afff113e9c4dd87127124
