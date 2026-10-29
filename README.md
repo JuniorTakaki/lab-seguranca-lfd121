@@ -205,18 +205,33 @@ explicitamente, em vez de ignoradas silenciosamente.
 
 No PowerShell, a partir deste diretório:
 
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
+
+Antes de executar o programa, defina as variáveis esperadas:
+
+```powershell
+$env:API_KEY = "chave-apenas-para-o-laboratorio"
+=======
 Defina uma senha inicial antes de executar:
 
 ```powershell
+
 $env:Senha_ADMIN_INICIAL = "troque-esta-senha"
 python app.py
 ```
+
+
+O programa poderá criar o arquivo local `usuarios.db`. Esse arquivo é gerado
+em tempo de execução e não deve ser versionado. A autenticação ainda não
+funcionará corretamente até que o nome da tabela na consulta seja corrigido.
+
+Para recriar o banco do laboratório, remova somente o arquivo gerado:
 
 Saída esperada, com pequenas variações:
 
@@ -231,6 +246,7 @@ Cada execução cadastra outro registro `admin`, pois o exemplo não implementa
 unicidade de usuário. Para recomeçar o laboratório, remova somente o banco
 gerado:
 
+
 ```powershell
 Remove-Item .\usuarios.db
 ```
@@ -244,12 +260,44 @@ semgrep scan --config auto --metrics=off
 pip-audit -r requirements.txt
 ```
 
+
+Para analisar a imagem Docker:
+
 Para a análise de container, construa a imagem e execute o Trivy:
+
 
 ```powershell
 docker build -t lab-seguranca:latest .
 trivy image --severity HIGH,CRITICAL lab-seguranca:latest
 ```
+
+
+O workflow do GitHub Actions é a referência para a sequência automatizada
+dessas verificações.
+
+## Limitações e próximos passos
+
+Antes de considerar o laboratório funcional, é necessário:
+
+- corrigir o nome da tabela na consulta de autenticação;
+- manter a validação das variáveis obrigatórias sem valores padrão para
+  segredos;
+- garantir que as variáveis obrigatórias não tenham segredos padrão;
+- fechar conexões SQLite com mais robustez, preferencialmente com context
+  managers;
+- impedir duplicidade de usuários com uma restrição `UNIQUE`;
+- adicionar testes automatizados;
+- fixar e revisar as versões das dependências;
+- decidir se o Trivy deve fazer o pipeline falhar ao encontrar vulnerabilidades
+  `HIGH` ou `CRITICAL`;
+- adicionar um `.dockerignore` para evitar o envio de ambientes virtuais e
+  arquivos locais para a imagem.
+
+O propósito do repositório é acompanhar o ciclo de reconhecer um padrão
+inseguro, aplicar uma correção verificável e automatizar a detecção no
+pipeline. A remoção dos conflitos de merge e o alinhamento do pipeline com
+Python 3.12 são avanços recentes; a correção das vulnerabilidades restantes
+continua fazendo parte do exercício prático do LFD121.
 
 O workflow do GitHub Actions é a referência oficial do projeto para a
 sequência automatizada dessas etapas.
@@ -281,3 +329,4 @@ Antes de considerar o laboratório funcional, é necessário:
 O valor principal deste repositório é mostrar o ciclo: reconhecer um padrão
 inseguro, aplicar uma correção simples e verificável e automatizar a detecção
 do problema no pipeline.
+

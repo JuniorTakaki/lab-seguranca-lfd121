@@ -32,7 +32,6 @@ def cadastrar_usuario( nome, senha_pura):
     salt = bcrypt.gensalt()
     senha_hash = bcrypt.hashpw(senha_pura.encode('utf-8'), salt)
 
-
     with closing(sqlite3.connect(os.getenv("DATABASE_PATH", "usuarios.db"))) as conn:
         with conn:
             conn.execute('''
@@ -93,3 +92,4 @@ if __name__ == "__main__":
 
     cadastrar_usuario("admin", senha_inicial)
     autenticar_usuario("admin", senha_inicial)
+
