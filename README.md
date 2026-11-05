@@ -24,12 +24,15 @@ GitHub Actions.
 ```text
 .
 ├── app.py
+├── docs/
+│   └── fluxograma.html
 ├── tests/
 │   └── test_app.py
 ├── dockerfile
 ├── .dockerignore
 ├── requirements.txt
 ├── README.md
+├── .gitignore
 └── .github/
     └── workflows/
         └── seguranca.yml
@@ -57,8 +60,34 @@ A política atual exige:
 
 As senhas são processadas com `bcrypt.gensalt()` e `bcrypt.hashpw()`. O hash,
 e não a senha original, é armazenado no SQLite. As configurações
-`API_KEY` e `Senha_ADMIN_INICIAL` são lidas por variáveis de ambiente e não
+`API_KEY` e `SENHA_ADMIN_INICIAL` são lidas por variáveis de ambiente e não
 possuem valor padrão no código.
+
+### Proteção contra enumeração de usuários
+
+`autenticar_usuario` responde com a mesma mensagem para usuário inexistente e
+senha incorreta. Quando o usuário não existe, a senha ainda é comparada com um
+hash fictício, para que o tempo de resposta não revele quais contas existem.
+
+### Limitador de tentativas de login
+
+Implementado sem dependências externas, com o estado guardado no SQLite
+(tabela `tentativas_login`):
+
+- 5 falhas em uma janela de 15 minutos bloqueiam o nome por 15 minutos;
+- durante o bloqueio, nem a senha correta é aceita, e o bcrypt não é executado;
+- login bem-sucedido zera o contador;
+- nomes inexistentes também são bloqueados, para não revelar quais contas existem;
+- o contador é atualizado com `BEGIN IMMEDIATE`, evitando condição de corrida;
+- o bloqueio é temporário, para não virar negação de serviço contra a vítima.
+
+Os parâmetros ficam em `MAX_TENTATIVAS_LOGIN`, `JANELA_TENTATIVAS_SEGUNDOS` e
+`TEMPO_BLOQUEIO_SEGUNDOS`, em [`app.py`](./app.py).
+
+### Minimização de dados
+
+`buscar_usuario` (antiga `conectar_banco`) retorna apenas `(id, nome)` e nunca
+o hash da senha.
 
 ### Banco de dados
 
@@ -81,7 +110,23 @@ Os testes em [`tests/test_app.py`](./tests/test_app.py) cobrem:
 - bloqueio de usuário duplicado;
 - autenticação com senha correta;
 - rejeição de senha incorreta;
-- rejeição de entrada inválida no acesso ao banco.
+- rejeição de entrada inválida no acesso ao banco;
+- allowlist ASCII para nomes (bloqueia homóglifos Unicode e `
+` final);
+- armazenamento da senha somente como hash bcrypt (custo 12);
+- autenticação "fail closed" para entradas inválidas;
+- rejeição de senhas acima de 72 bytes também no login;
+- mensagem idêntica para usuário inexistente e senha errada;
+- consulta de usuário sem expor o hash da senha;
+- bloqueio após falhas, expiração do bloqueio, reinício do contador, janela
+  deslizante, bloqueio de nomes inexistentes e persistência após reinício.
+
+## Fluxogramas
+
+[`docs/fluxograma.html`](./docs/fluxograma.html) mostra, em diagramas, o
+pipeline de CI, a execução, o cadastro, a autenticação e os estados do
+limitador de tentativas. Abra o arquivo no navegador; ele funciona sem
+internet, usando fontes do sistema como alternativa.
 
 ## Execução local
 
@@ -105,7 +150,7 @@ Configure os valores necessários:
 
 ```powershell
 $env:API_KEY = "chave-apenas-para-o-laboratorio"
-$env:Senha_ADMIN_INICIAL = "SenhaSegura123"
+$env:SENHA_ADMIN_INICIAL = "SenhaSegura123"
 python app.py
 ```
 
@@ -119,7 +164,7 @@ python -m unittest discover -s tests -v
 Resultado esperado:
 
 ```text
-Ran 5 tests
+Ran 19 tests
 OK
 ```
 
@@ -146,7 +191,7 @@ Execução:
 ```powershell
 docker run --rm `
   -e API_KEY=chave-apenas-para-o-laboratorio `
-  -e Senha_ADMIN_INICIAL=SenhaSegura123 `
+  -e SENHA_ADMIN_INICIAL=SenhaSegura123 `
   lab-seguranca:latest
 ```
 
@@ -161,7 +206,7 @@ pushes e pull requests para `main`. Ele:
 4. executa pip-audit como SCA;
 5. executa os testes automatizados;
 6. constrói a imagem Docker;
-7. executa Trivy para vulnerabilidades `HIGH` e `CRITICAL`.
+7. executa Trivy para vulnerabilidades `CRITICAL`.
 
 O Trivy usa `exit-code: "1"`, portanto o job falha quando encontra
 vulnerabilidades dentro da política definida. Exceções devem ser justificadas,
@@ -173,7 +218,7 @@ As verificações locais equivalentes são:
 semgrep scan --config auto --metrics=off
 pip-audit -r requirements.txt
 docker build -t lab-seguranca:latest .
-trivy image --severity HIGH,CRITICAL lab-seguranca:latest
+trivy image --severity CRITICAL lab-seguranca:latest
 ```
 
 ## Dependências
@@ -193,9 +238,8 @@ Este laboratório ainda não implementa:
 
 - autorização e papéis;
 - sessões seguras;
-- limite de tentativas e proteção contra brute force;
+- limite de tentativas por IP/origem (hoje o limite é por nome de usuário);
 - rotação e gerenciamento centralizado de segredos;
-- mensagens genéricas para evitar enumeração de usuários;
 - SBOM, assinatura e verificação da imagem;
 - política formal de retenção e monitoramento.
 

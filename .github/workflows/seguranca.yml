@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Menor privilégio: o GITHUB_TOKEN só pode ler o repositório. Se uma Action
+# de terceiros for comprometida, ela não consegue fazer push nem alterar releases.
+permissions:
+  contents: read
+
 jobs:
   analise-seguranca:
     runs-on: ubuntu-latest

@@ -1,0 +1,34 @@
+# --- Segredos: nunca versionar -------------------------------------------
+# Um segredo que entra no histórico do git deve ser considerado vazado, mesmo
+# que seja apagado depois: ele continua nos commits antigos e nos clones.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Dados locais --------------------------------------------------------
+# O banco contém hashes de senha e o estado do limitador de login.
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# --- Python --------------------------------------------------------------
+# Bytecode é gerado automaticamente, depende da versão do interpretador e
+# polui revisões de código (diffs binários que ninguém consegue revisar).
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Editores e sistema --------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

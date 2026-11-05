@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluxogramas do Lab LFD121</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap" rel="stylesheet">
+<style>
+/* Layout: coluna de leitura estreita para o texto; figuras usam a largura toda e rolam na horizontal se preciso. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #17202e;
+  --muted: #5a6578;
+  --line: #9aa6b8;
+  --accent: #2346a8;
+  --deny: #b42318; --deny-bg: #fdecea;
+  --ok: #1d7a4a; --ok-bg: #e6f4ec;
+  --warn: #a15c07; --warn-bg: #fdf3e2;
+  --dec-bg: #eef2fb;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #11151c; --surface: #1a2029; --ink: #e5e9f0; --muted: #9aa5b6; --line: #56627a;
+    --accent: #8aa8ff;
+    --deny: #ff8a80; --deny-bg: #3a1d1c;
+    --ok: #6fd39c; --ok-bg: #16301f;
+    --warn: #f2b65c; --warn-bg: #352812;
+    --dec-bg: #1e2740;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11151c; --surface: #1a2029; --ink: #e5e9f0; --muted: #9aa5b6; --line: #56627a;
+  --accent: #8aa8ff;
+  --deny: #ff8a80; --deny-bg: #3a1d1c;
+  --ok: #6fd39c; --ok-bg: #16301f;
+  --warn: #f2b65c; --warn-bg: #352812;
+  --dec-bg: #1e2740;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); }
+main { max-width: 1240px; margin: 0 auto; padding: 40px 20px 64px; display: grid; gap: 40px; }
+header, .texto { max-width: 68ch; }
+h1, h2 { font-family: var(--display); font-weight: 600; text-wrap: balance; line-height: 1.15; margin: 0 0 8px; }
+h1 { font-size: 2.1rem; }
+h2 { font-size: 1.4rem; }
+p { margin: 0 0 10px; color: var(--muted); }
+code { font-family: var(--mono); font-size: .9em; color: var(--ink); }
+section { display: grid; gap: 14px; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; overflow-x: auto; }
+figure svg { display: block; width: 100%; height: auto; min-width: 640px; color: var(--line); }
+figure.alto svg { max-width: 760px; margin: 0 auto; min-width: 560px; }
+figcaption { margin-top: 12px; font-size: .9rem; color: var(--muted); max-width: 80ch; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a { font-size: .9rem; color: var(--accent); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; background: var(--surface); }
+nav a:hover, nav a:focus-visible { border-color: var(--accent); outline: none; }
+.legenda { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: .85rem; color: var(--muted); }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda i { display: inline-block; width: 18px; height: 12px; border: 1.5px solid; border-radius: 3px; }
+.legenda .l-node { background: var(--surface); border-color: var(--line); }
+.legenda .l-dec { background: var(--dec-bg); border-color: var(--accent); transform: rotate(45deg) scale(.7); }
+.legenda .l-ok { background: var(--ok-bg); border-color: var(--ok); }
+.legenda .l-deny { background: var(--deny-bg); border-color: var(--deny); }
+.legenda .l-warn { background: var(--warn-bg); border-color: var(--warn); }
+.legenda .l-term { background: var(--surface); border-color: var(--accent); border-radius: 6px; }
+
+/* Formas dentro dos SVGs */
+.node { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.term { fill: var(--surface); stroke: var(--accent); stroke-width: 1.8; }
+.dec  { fill: var(--dec-bg); stroke: var(--accent); stroke-width: 1.5; }
+.ok   { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 1.8; }
+.deny { fill: var(--deny-bg); stroke: var(--deny); stroke-width: 1.8; }
+.warn { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.8; }
+.edge { fill: none; stroke: currentColor; stroke-width: 1.5; }
+.dash { stroke-dasharray: 5 4; }
+.t { font-family: var(--sans); font-size: 12.5px; fill: var(--ink); }
+.t.b { font-weight: 600; }
+.t.m { font-family: var(--mono); font-size: 12px; }
+.t.s { font-size: 11px; fill: var(--muted); }
+.lbl { font-family: var(--sans); font-size: 11.5px; font-weight: 600; fill: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Fluxogramas do Laboratório de Segurança LFD121</h1>
+    <p>Como o projeto funciona, do commit até o login. Cada caixa vermelha é um ponto em que um controle de segurança recusa a operação; as verdes são os caminhos de sucesso. Os nomes em fonte monoespaçada são funções reais de <code>app.py</code>.</p>
+  </header>
+
+  <nav aria-label="Seções">
+    <a href="#pipeline">1. Pipeline de CI</a>
+    <a href="#execucao">2. Execução</a>
+    <a href="#cadastro">3. Cadastro</a>
+    <a href="#autenticacao">4. Autenticação</a>
+    <a href="#limitador">5. Limitador</a>
+  </nav>
+
+  <div class="legenda" aria-label="Legenda">
+    <span><i class="l-term"></i>início ou fim</span>
+    <span><i class="l-node"></i>processamento</span>
+    <span><i class="l-dec"></i>decisão</span>
+    <span><i class="l-ok"></i>sucesso</span>
+    <span><i class="l-deny"></i>recusado</span>
+    <span><i class="l-warn"></i>atenção (contando ou bloqueando)</span>
+  </div>
+
+  <section id="pipeline">
+    <div class="texto">
+      <h2>1. Pipeline de CI (<code>seguranca.yml</code>)</h2>
+      <p>Roda em todo push e pull request para <code>main</code>, com <code>permissions: contents: read</code>. Cada ferramenta olha uma camada diferente: o código, as dependências, o comportamento e a imagem final.</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 1050 180" role="img" aria-label="Pipeline de CI: push, Semgrep, pip-audit, testes, build Docker e Trivy; qualquer falha barra o merge" xmlns="http://www.w3.org/2000/svg"><defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><rect x="20.0" y="34.0" width="140" height="52" rx="26.0" class="term"/><text x="90.0" y="56.5" class="t b" text-anchor="middle">push / PR</text><text x="90.0" y="71.5" class="t s" text-anchor="middle">para main</text><rect x="194.0" y="34.0" width="140" height="52" rx="6" class="node"/><text x="264.0" y="56.5" class="t b" text-anchor="middle">Semgrep</text><text x="264.0" y="71.5" class="t s" text-anchor="middle">SAST: lê o código</text><polyline points="162.0,60 192.0,60" class="edge" marker-end="url(#seta)"/><rect x="368.0" y="34.0" width="140" height="52" rx="6" class="node"/><text x="438.0" y="56.5" class="t b" text-anchor="middle">pip-audit</text><text x="438.0" y="71.5" class="t s" text-anchor="middle">SCA: dependências</text><polyline points="336.0,60 366.0,60" class="edge" marker-end="url(#seta)"/><rect x="542.0" y="34.0" width="140" height="52" rx="6" class="node"/><text x="612.0" y="56.5" class="t b" text-anchor="middle">Testes</text><text x="612.0" y="71.5" class="t s" text-anchor="middle">19 testes unittest</text><polyline points="510.0,60 540.0,60" class="edge" marker-end="url(#seta)"/><rect x="716.0" y="34.0" width="140" height="52" rx="6" class="node"/><text x="786.0" y="56.5" class="t b" text-anchor="middle">docker build</text><text x="786.0" y="71.5" class="t s" text-anchor="middle">usuário não-root</text><polyline points="684.0,60 714.0,60" class="edge" marker-end="url(#seta)"/><rect x="890.0" y="34.0" width="140" height="52" rx="6" class="node"/><text x="960.0" y="56.5" class="t b" text-anchor="middle">Trivy</text><text x="960.0" y="71.5" class="t s" text-anchor="middle">imagem: CRITICAL</text><polyline points="858.0,60 888.0,60" class="edge" marker-end="url(#seta)"/><polyline points="535.0,86 535.0,128" class="edge dash" marker-end="url(#seta)"/><rect x="325.0" y="130.0" width="420" height="40" rx="6" class="deny"/><text x="535.0" y="154.0" class="t " text-anchor="middle">Qualquer etapa falhou: o job para e o merge é barrado</text></svg>
+      <figcaption>As etapas rodam em sequência; a primeira que falhar interrompe o job. As Actions são fixadas por hash de commit para evitar troca maliciosa de versão.</figcaption>
+    </figure>
+  </section>
+
+  <section id="execucao">
+    <div class="texto">
+      <h2>2. Execução da aplicação (<code>main()</code>)</h2>
+      <p>O que acontece quando o container sobe ou quando você roda <code>python app.py</code>.</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 1130 230" role="img" aria-label="Fluxo de main: valida segredos, inicializa o banco, cadastra o admin se não existir e autentica" xmlns="http://www.w3.org/2000/svg"><defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><rect x="10.0" y="47.0" width="130" height="46" rx="23.0" class="term"/><text x="75" y="74.0" class="t m" text-anchor="middle">python app.py</text><polyline points="140,70 168,70" class="edge" marker-end="url(#seta)"/><polygon points="265,22.0 360.0,70 265,118.0 170.0,70" class="dec"/><text x="265" y="59.0" class="t " text-anchor="middle">API_KEY e</text><text x="265" y="74.0" class="t m" text-anchor="middle">SENHA_ADMIN_INICIAL</text><text x="265" y="89.0" class="t " text-anchor="middle">definidas?</text><polyline points="265,118 265,168" class="edge" marker-end="url(#seta)"/><text x="273" y="147" class="lbl" text-anchor="start">não</text><rect x="165.0" y="170.0" width="200" height="48" rx="6" class="deny"/><text x="265" y="190.5" class="t m" text-anchor="middle">EnvironmentError</text><text x="265" y="205.5" class="t s" text-anchor="middle">fail fast: não sobe sem segredo</text><polyline points="360,70 388,70" class="edge" marker-end="url(#seta)"/><text x="374" y="62" class="lbl" text-anchor="middle">sim</text><rect x="390.0" y="46.0" width="140" height="48" rx="6" class="node"/><text x="460" y="66.5" class="t m" text-anchor="middle">inicializar_banco()</text><text x="460" y="81.5" class="t s" text-anchor="middle">cria tabelas</text><polyline points="530,70 558,70" class="edge" marker-end="url(#seta)"/><polygon points="630,30.0 700.0,70 630,110.0 560.0,70" class="dec"/><text x="630" y="66.5" class="t " text-anchor="middle">admin já</text><text x="630" y="81.5" class="t " text-anchor="middle">existe?</text><polyline points="700,70 738,70" class="edge" marker-end="url(#seta)"/><text x="719" y="62" class="lbl" text-anchor="middle">não</text><rect x="740.0" y="46.0" width="160" height="48" rx="6" class="node"/><text x="820" y="66.5" class="t m" text-anchor="middle">cadastrar_usuario</text><text x="820" y="81.5" class="t m" text-anchor="middle">(&quot;admin&quot;, senha)</text><polyline points="900,70 938,70" class="edge" marker-end="url(#seta)"/><rect x="945.0" y="46.0" width="170" height="48" rx="6" class="ok"/><text x="1030" y="66.5" class="t m" text-anchor="middle">autenticar_usuario</text><text x="1030" y="81.5" class="t m" text-anchor="middle">(&quot;admin&quot;, senha)</text><polyline points="630,110 630,194 1030,194 1030,96" class="edge" marker-end="url(#seta)"/><text x="830" y="186" class="lbl" text-anchor="middle">sim: pula o cadastro (idempotente)</text></svg>
+      <figcaption>Sem os segredos no ambiente, a aplicação nem inicia (fail fast). Reiniciar não recria nem sobrescreve o admin.</figcaption>
+    </figure>
+  </section>
+
+  <section id="cadastro">
+    <div class="texto">
+      <h2>3. Cadastro de usuário</h2>
+      <p>A entrada é validada antes de tocar no bcrypt ou no banco. A senha em texto puro nunca é gravada.</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 1210 220" role="img" aria-label="Fluxo de cadastro: valida nome e senha, gera hash bcrypt, insere com parâmetros; duplicado gera erro" xmlns="http://www.w3.org/2000/svg"><defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><rect x="10.0" y="47.0" width="140" height="46" rx="23.0" class="term"/><text x="80" y="66.5" class="t m" text-anchor="middle">cadastrar_usuario</text><text x="80" y="81.5" class="t m" text-anchor="middle">(nome, senha)</text><polyline points="150,70 178,70" class="edge" marker-end="url(#seta)"/><polygon points="250,28.0 320.0,70 250,112.0 180.0,70" class="dec"/><text x="250" y="66.5" class="t " text-anchor="middle">Nome na</text><text x="250" y="81.5" class="t " text-anchor="middle">allowlist?</text><polyline points="320,70 348,70" class="edge" marker-end="url(#seta)"/><text x="334" y="62" class="lbl" text-anchor="middle">sim</text><polygon points="420,28.0 490.0,70 420,112.0 350.0,70" class="dec"/><text x="420" y="66.5" class="t " text-anchor="middle">Senha na</text><text x="420" y="81.5" class="t " text-anchor="middle">política?</text><polyline points="490,70 518,70" class="edge" marker-end="url(#seta)"/><text x="504" y="62" class="lbl" text-anchor="middle">sim</text><rect x="520.0" y="44.0" width="150" height="52" rx="6" class="node"/><text x="595" y="66.5" class="t m" text-anchor="middle">bcrypt.hashpw</text><text x="595" y="81.5" class="t s" text-anchor="middle">salt aleatório, custo 12</text><polyline points="670,70 698,70" class="edge" marker-end="url(#seta)"/><rect x="700.0" y="44.0" width="150" height="52" rx="6" class="node"/><text x="775" y="66.5" class="t m" text-anchor="middle">INSERT ... (?, ?)</text><text x="775" y="81.5" class="t s" text-anchor="middle">consulta parametrizada</text><polyline points="850,70 878,70" class="edge" marker-end="url(#seta)"/><polygon points="950,28.0 1020.0,70 950,112.0 880.0,70" class="dec"/><text x="950" y="66.5" class="t " text-anchor="middle">Nome</text><text x="950" y="81.5" class="t " text-anchor="middle">duplicado?</text><polyline points="1020,70 1048,70" class="edge" marker-end="url(#seta)"/><text x="1034" y="62" class="lbl" text-anchor="middle">não</text><rect x="1050.0" y="44.0" width="140" height="52" rx="6" class="ok"/><text x="1120" y="66.5" class="t b" text-anchor="middle">Usuário salvo</text><text x="1120" y="81.5" class="t s" text-anchor="middle">só o hash no banco</text><polyline points="250,112 250,156" class="edge" marker-end="url(#seta)"/><text x="258" y="138" class="lbl" text-anchor="start">não</text><rect x="170.0" y="158.0" width="160" height="44" rx="6" class="deny"/><text x="250" y="176.5" class="t m" text-anchor="middle">ValueError</text><text x="250" y="191.5" class="t s" text-anchor="middle">nome inválido</text><polyline points="420,112 420,156" class="edge" marker-end="url(#seta)"/><text x="428" y="138" class="lbl" text-anchor="start">não</text><rect x="340.0" y="158.0" width="160" height="44" rx="6" class="deny"/><text x="420" y="176.5" class="t m" text-anchor="middle">ValueError</text><text x="420" y="191.5" class="t s" text-anchor="middle">senha fraca</text><polyline points="950,112 950,156" class="edge" marker-end="url(#seta)"/><text x="958" y="138" class="lbl" text-anchor="start">sim</text><rect x="870.0" y="158.0" width="160" height="44" rx="6" class="deny"/><text x="950" y="176.5" class="t m" text-anchor="middle">ValueError</text><text x="950" y="191.5" class="t s" text-anchor="middle">já está cadastrado</text></svg>
+      <figcaption>A restrição <code>UNIQUE</code> do banco é quem detecta o nome duplicado, então nem duas requisições simultâneas conseguem criar o mesmo usuário.</figcaption>
+    </figure>
+  </section>
+
+  <section id="autenticacao">
+    <div class="texto">
+      <h2>4. Autenticação com limitador de tentativas</h2>
+      <p>O fluxo mais importante do projeto. Para quem está de fora, todos os caminhos vermelhos parecem iguais: retornam <code>False</code> com a mesma mensagem genérica. A diferença entre eles só aparece no log interno.</p>
+    </div>
+    <figure class="alto">
+      <svg viewBox="0 0 760 1025" role="img" aria-label="Fluxo de autenticação: allowlist, tamanho da senha, bloqueio, consulta, hash real ou fictício, checkpw, sucesso limpa falhas, falha registra e pode bloquear" xmlns="http://www.w3.org/2000/svg"><defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><rect x="100.0" y="18.0" width="300" height="44" rx="22.0" class="term"/><text x="250" y="44.0" class="t m" text-anchor="middle">autenticar_usuario(nome, senha)</text><polyline points="250,62 250,93" class="edge" marker-end="url(#seta)"/><polygon points="250,94.0 365.0,130 250,166.0 135.0,130" class="dec"/><text x="250" y="126.5" class="t " text-anchor="middle">Nome passa na</text><text x="250" y="141.5" class="t " text-anchor="middle">allowlist?</text><polyline points="365,130 443.0,130" class="edge" marker-end="url(#seta)"/><text x="400" y="122" class="lbl" text-anchor="middle">não</text><rect x="445.0" y="104.0" width="290" height="52" rx="6" class="deny"/><text x="590" y="126.5" class="t m" text-anchor="middle">return False</text><text x="590" y="141.5" class="t s" text-anchor="middle">fail closed: nada chega ao banco</text><polyline points="250,166 250,203" class="edge" marker-end="url(#seta)"/><text x="258" y="189" class="lbl" text-anchor="start">sim</text><polygon points="250,204.0 365.0,240 250,276.0 135.0,240" class="dec"/><text x="250" y="236.5" class="t " text-anchor="middle">Senha é texto</text><text x="250" y="251.5" class="t " text-anchor="middle">e tem ≤ 72 bytes?</text><polyline points="365,240 443.0,240" class="edge" marker-end="url(#seta)"/><text x="400" y="232" class="lbl" text-anchor="middle">não</text><rect x="445.0" y="214.0" width="290" height="52" rx="6" class="deny"/><text x="590" y="236.5" class="t m" text-anchor="middle">return False</text><text x="590" y="251.5" class="t s" text-anchor="middle">bcrypt truncaria acima de 72 bytes</text><polyline points="250,276 250,313" class="edge" marker-end="url(#seta)"/><text x="258" y="299" class="lbl" text-anchor="start">sim</text><polygon points="250,314.0 365.0,350 250,386.0 135.0,350" class="dec"/><text x="250" y="346.5" class="t " text-anchor="middle">Nome está</text><text x="250" y="361.5" class="t " text-anchor="middle">bloqueado?</text><polyline points="365,350 443.0,350" class="edge" marker-end="url(#seta)"/><text x="400" y="342" class="lbl" text-anchor="middle">sim</text><rect x="445.0" y="324.0" width="290" height="52" rx="6" class="deny"/><text x="590" y="346.5" class="t m" text-anchor="middle">return False, sem bcrypt</text><text x="590" y="361.5" class="t s" text-anchor="middle">nem a senha certa entra; motivo só no log</text><polyline points="250,386 250,419" class="edge" marker-end="url(#seta)"/><text x="258" y="405" class="lbl" text-anchor="start">não</text><rect x="105.0" y="421.0" width="290" height="48" rx="6" class="node"/><text x="250" y="441.5" class="t m" text-anchor="middle">SELECT senha_hash WHERE nome = ?</text><text x="250" y="456.5" class="t s" text-anchor="middle">consulta parametrizada</text><polyline points="250,469 250,494" class="edge" marker-end="url(#seta)"/><rect x="105.0" y="496.0" width="290" height="48" rx="6" class="node"/><text x="250" y="516.5" class="t b" text-anchor="middle">Usa o hash real ou o fictício</text><text x="250" y="531.5" class="t s" text-anchor="middle">tempo igual, exista o usuário ou não</text><polyline points="250,544 250,569" class="edge" marker-end="url(#seta)"/><rect x="105.0" y="571.0" width="290" height="48" rx="6" class="node"/><text x="250" y="591.5" class="t m" text-anchor="middle">bcrypt.checkpw</text><text x="250" y="606.5" class="t s" text-anchor="middle">comparação em tempo constante</text><polyline points="250,619 250,657" class="edge" marker-end="url(#seta)"/><polygon points="250,659.0 365.0,695 250,731.0 135.0,695" class="dec"/><text x="250" y="691.5" class="t " text-anchor="middle">Usuário existe</text><text x="250" y="706.5" class="t " text-anchor="middle">e senha confere?</text><polyline points="365,695 443.0,695" class="edge" marker-end="url(#seta)"/><text x="400" y="687" class="lbl" text-anchor="middle">sim</text><rect x="445.0" y="669.0" width="290" height="52" rx="6" class="ok"/><text x="590" y="691.5" class="t m" text-anchor="middle">_limpar_falhas → return True</text><text x="590" y="706.5" class="t s" text-anchor="middle">contador volta a zero</text><polyline points="250,731 250,769" class="edge" marker-end="url(#seta)"/><text x="258" y="754" class="lbl" text-anchor="start">não</text><rect x="105.0" y="771.0" width="290" height="48" rx="6" class="node"/><text x="250" y="791.5" class="t m" text-anchor="middle">_registrar_falha(nome)</text><text x="250" y="806.5" class="t s" text-anchor="middle">BEGIN IMMEDIATE: soma atômica</text><polyline points="250,819 250,853" class="edge" marker-end="url(#seta)"/><polygon points="250,854.0 365.0,890 250,926.0 135.0,890" class="dec"/><text x="250" y="886.5" class="t " text-anchor="middle">5ª falha dentro</text><text x="250" y="901.5" class="t " text-anchor="middle">da janela de 15 min?</text><polyline points="365,890 443.0,890" class="edge" marker-end="url(#seta)"/><text x="400" y="882" class="lbl" text-anchor="middle">sim</text><rect x="445.0" y="864.0" width="290" height="52" rx="6" class="warn"/><text x="590" y="886.5" class="t b" text-anchor="middle">Bloqueio temporário</text><text x="590" y="901.5" class="t s" text-anchor="middle">bloqueado_ate = agora + 15 min; log</text><polyline points="250,926 250,961" class="edge" marker-end="url(#seta)"/><text x="258" y="947" class="lbl" text-anchor="start">não</text><polyline points="590,916 590,985 402,985" class="edge" marker-end="url(#seta)"/><rect x="100.0" y="962.0" width="300" height="46" rx="23.0" class="deny"/><text x="250" y="981.5" class="t m" text-anchor="middle">return False</text><text x="250" y="996.5" class="t s" text-anchor="middle">“usuário ou senha inválidos”</text></svg>
+      <figcaption>O bloqueio é checado antes do bcrypt, para que nenhuma senha seja testada durante o bloqueio. Quando o usuário não existe, a comparação usa um hash fictício, e o tempo de resposta não revela quais contas existem.</figcaption>
+    </figure>
+  </section>
+
+  <section id="limitador">
+    <div class="texto">
+      <h2>5. Estados do limitador (tabela <code>tentativas_login</code>)</h2>
+      <p>Cada nome de usuário, existente ou não, passa por estes três estados. O estado fica no SQLite e sobrevive a reinícios.</p>
+    </div>
+    <figure>
+      <svg viewBox="0 0 940 248" role="img" aria-label="Estados do limitador: Livre, Contando (1 a 4 falhas) e Bloqueado por 15 minutos, que expira e volta a Livre" xmlns="http://www.w3.org/2000/svg"><defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><rect x="35.0" y="90.0" width="190" height="60" rx="30.0" class="ok"/><text x="130" y="116.5" class="t b" text-anchor="middle">Livre</text><text x="130" y="131.5" class="t s" text-anchor="middle">0 falhas</text><rect x="365.0" y="90.0" width="210" height="60" rx="6" class="warn"/><text x="470" y="116.5" class="t b" text-anchor="middle">Contando</text><text x="470" y="131.5" class="t s" text-anchor="middle">1 a 4 falhas na janela</text><rect x="705.0" y="90.0" width="210" height="60" rx="6" class="deny"/><text x="810" y="116.5" class="t b" text-anchor="middle">Bloqueado</text><text x="810" y="131.5" class="t s" text-anchor="middle">15 min, bcrypt não roda</text><path d="M 200 102 C 260 70, 320 70, 362 100" class="edge" marker-end="url(#seta)"/><text x="280" y="66" class="lbl" text-anchor="middle">senha errada</text><path d="M 362 140 C 320 172, 260 172, 202 140" class="edge" marker-end="url(#seta)"/><text x="280" y="186" class="lbl" text-anchor="middle">login correto</text><path d="M 576 105 L 702 105" class="edge" marker-end="url(#seta)"/><text x="639" y="96" class="lbl" text-anchor="middle">5ª falha</text><path d="M 440 90 C 420 30, 520 30, 500 88" class="edge" marker-end="url(#seta)"/><text x="470" y="32" class="lbl" text-anchor="middle">erro: +1</text><path d="M 780 90 C 760 30, 860 30, 840 88" class="edge" marker-end="url(#seta)"/><text x="810" y="32" class="lbl" text-anchor="middle">tentativa: False</text><path d="M 810 152 C 810 230, 130 230, 130 152" class="edge" marker-end="url(#seta)"/><text x="470" y="234" class="lbl" text-anchor="middle">15 min depois o bloqueio expira</text></svg>
+      <figcaption>Falhas mais antigas que a janela de 15 minutos deixam de contar. Ao bloquear, o contador volta a zero, e o usuário recebe 5 novas tentativas quando o bloqueio expira.</figcaption>
+    </figure>
+  </section>
+</main>
+</body>
+</html>
